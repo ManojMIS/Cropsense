@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CropSense AI — Smart Farming Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0f0a;
+      --surface: #111811;
+      --card: #161d16;
+      --border: #1f2d1f;
+      --accent: #4ade80;
+      --accent2: #86efac;
+      --accent3: #bbf7d0;
+      --gold: #fbbf24;
+      --blue: #60a5fa;
+      --purple: #a78bfa;
+      --orange: #fb923c;
+      --text: #e8f5e8;
+      --muted: #6b7f6b;
+      --danger: #f87171;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh; overflow-x: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px; opacity: 0.35; pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: ''; position: fixed; top: -200px; left: 50%; transform: translateX(-50%);
+      width: 900px; height: 500px;
+      background: radial-gradient(ellipse, rgba(74,222,128,0.07) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    header {
+      position: relative; z-index: 10; padding: 20px 48px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px); background: rgba(10,15,10,0.8);
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent), #16a34a);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 18px; box-shadow: 0 0 20px rgba(74,222,128,0.3);
+    }
+    .logo-text { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
+    .logo-text span { color: var(--accent); }
+    .header-badge {
+      background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.3);
+      color: var(--accent); padding: 5px 12px; border-radius: 100px;
+      font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
+    }
+
+    main {
+      position: relative; z-index: 5; max-width: 1440px;
+      margin: 0 auto; padding: 32px 28px;
+      display: grid; grid-template-columns: 390px 1fr; gap: 22px;
+    }
+
+    .input-panel {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 24px; height: fit-content;
+      position: sticky; top: 22px;
+      max-height: calc(100vh - 96px); overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    .section-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+    .section-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 18px; }
+    .isec { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 11px; }
+    .ig { margin-bottom: 13px; }
+    .ig label { display: block; font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 5px; }
+    .ig input, .ig select {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); padding: 9px 12px; border-radius: 9px;
+      font-family: 'DM Sans', sans-serif; font-size: 13px;
+      transition: border-color 0.2s, box-shadow 0.2s; appearance: none;
+    }
+    .ig input:focus, .ig select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(74,222,128,0.1); }
+    .ig select option { background: var(--surface); }
+    .irow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .divider { height: 1px; background: var(--border); margin: 16px 0; }
+    .analyze-btn {
+      width: 100%; background: linear-gradient(135deg, var(--accent), #16a34a);
+      border: none; color: #0a0f0a; padding: 13px; border-radius: 11px;
+      font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+      letter-spacing: 0.5px; cursor: pointer; margin-top: 16px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(74,222,128,0.25);
+    }
+    .analyze-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(74,222,128,0.35); }
+    .analyze-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .output-panel { display: flex; flex-direction: column; gap: 16px; }
+
+    .welcome-state {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 60px 32px; text-align: center;
+    }
+    .welcome-icon { font-size: 58px; margin-bottom: 14px; }
+    .welcome-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .welcome-sub { color: var(--muted); font-size: 13px; line-height: 1.7; }
+
+    .result-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 18px 20px;
+      position: relative; overflow: hidden; animation: fadeUp 0.45s ease both;
+    }
+    .result-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+    }
+    .result-card.blue::before   { background: linear-gradient(90deg, var(--blue), transparent); }
+    .result-card.purple::before { background: linear-gradient(90deg, var(--purple), transparent); }
+    .result-card.gold::before   { background: linear-gradient(90deg, var(--gold), transparent); }
+    .result-card.orange::before { background: linear-gradient(90deg, var(--orange), transparent); }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    .result-card:nth-child(1){animation-delay:.04s} .result-card:nth-child(2){animation-delay:.08s}
+    .result-card:nth-child(3){animation-delay:.12s} .result-card:nth-child(4){animation-delay:.16s}
+    .result-card:nth-child(5){animation-delay:.20s} .result-card:nth-child(6){animation-delay:.24s}
+    .result-card:nth-child(7){animation-delay:.28s}
+
+    .card-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 9px; }
+    .card-main { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: var(--accent); margin-bottom: 4px; line-height: 1.1; }
+    .card-sub { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .tip-box {
+      margin-top: 10px; background: rgba(74,222,128,0.06);
+      border: 1px solid rgba(74,222,128,0.15); border-radius: 9px;
+      padding: 9px 11px; font-size: 11px; color: var(--accent3); line-height: 1.5;
+    }
+    .tip-box::before { content: '💡 '; }
+    .cbar-wrap { margin-top: 11px; }
+    .cbar-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 5px; }
+    .cbar { height: 3px; background: var(--border); border-radius: 100px; overflow: hidden; }
+    .cbar-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--accent), #22c55e); transition: width 1s ease; }
+
+    .two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    .chart-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+
+    .stat-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .stat-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 7px 11px; font-size: 11px; flex: 1; min-width: 70px; text-align: center; }
+    .stat-chip-val { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
+    .stat-chip-lbl { color: var(--muted); font-size: 10px; margin-top: 2px; }
+
+    .top3 { margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+    .t3i { display: flex; align-items: center; gap: 9px; font-size: 12px; }
+    .t3rank {
+      width: 19px; height: 19px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: var(--muted); flex-shrink: 0;
+    }
+    .t3rank.g { background: rgba(251,191,36,0.12); border-color: var(--gold); color: var(--gold); }
+    .t3name { flex: 1; font-weight: 500; }
+    .t3bw { flex: 2; height: 3px; background: var(--border); border-radius: 100px; overflow: hidden; }
+    .t3b  { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width 1s ease; }
+    .t3pct { font-size: 11px; color: var(--muted); width: 36px; text-align: right; }
+
+    .health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 12px; }
+    .hm { background: var(--surface); border-radius: 9px; padding: 9px 11px; }
+    .hm-lbl { font-size: 10px; color: var(--muted); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .hm-val { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; }
+
+    .gauge-center {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    .gauge-num { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; line-height: 1; }
+    .gauge-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 1px; text-transform: uppercase; }
+
+    .loading { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 60px; font-size: 14px; color: var(--muted); }
+    .spinner { width: 22px; height: 22px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-box { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.3); border-radius: 14px; padding: 20px; color: var(--danger); text-align: center; }
+
+    @media (max-width: 1050px) {
+      main { grid-template-columns: 1fr; }
+      .input-panel { position: static; max-height: none; }
+      .two-col, .three-col { grid-template-columns: 1fr; }
+      header { padding: 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🌾</div>
+    <div class="logo-text">Crop<span>Sense</span> AI</div>
+  </div>
+  <div class="header-badge">Smart Farming Platform</div>
+</header>
+
+<main>
+  <!-- ════ INPUT PANEL ════ -->
+  <div class="input-panel">
+    <div class="section-label">Field Configuration</div>
+    <div class="section-title">Parameters</div>
+
+    <div class="isec">⚗️ Soil Nutrients (NPK)</div>
+    <div class="irow">
+      <div class="ig"><label>Nitrogen (N)</label><input type="number" id="N" value="90" min="0" max="200"/></div>
+      <div class="ig"><label>Phosphorus (P)</label><input type="number" id="P" value="42" min="0" max="200"/></div>
+    </div>
+    <div class="ig"><label>Potassium (K)</label><input type="number" id="K" value="43" min="0" max="200"/></div>
+
+    <div class="divider"></div>
+    <div class="isec">🌤️ Climate &amp; Environment</div>
+    <div class="irow">
+      <div class="ig"><label>Temperature (°C)</label><input type="number" id="temperature" value="25" min="-10" max="55"/></div>
+      <div class="ig"><label>Humidity (%)</label><input type="number" id="humidity" value="70" min="0" max="100"/></div>
+    </div>
+    <div class="irow">
+      <div class="ig"><label>Rainfall (mm)</label><input type="number" id="rainfall" value="200" min="0" max="3000"/></div>
+      <div class="ig"><label>Sunlight Hours</label><input type="number" id="sunlight_hours" value="6" min="0" max="16" step="0.5"/></div>
+    </div>
+    <div class="irow">
+      <div class="ig"><label>Soil pH</label><input type="number" id="ph" value="6.5" min="0" max="14" step="0.1"/></div>
+      <div class="ig"><label>Soil Moisture (%)</label><input type="number" id="moisture" value="40" min="0" max="100"/></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="isec">🌱 Farm Conditions</div>
+    <div class="ig">
+      <label>Soil Type</label>
+      <select id="soil_type">{% for s in soil_types %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select>
+    </div>
+    <div class="ig">
+      <label>Crop Type (for Fertilizer)</label>
+      <select id="crop_type">{% for c in crop_types %}<option value="{{ c }}">{{ c }}</option>{% endfor %}</select>
+    </div>
+    <div class="irow">
+      <div class="ig"><label>Water Frequency</label>
+        <select id="water_frequency">{% for w in water_freqs %}<option value="{{ w }}">{{ w }}</option>{% endfor %}</select>
+      </div>
+      <div class="ig"><label>Fertilizer Type</label>
+        <select id="fertilizer_type">{% for ft in fert_types %}<option value="{{ ft }}">{{ ft }}</option>{% endfor %}</select>
+      </div>
+    </div>
+    <button class="analyze-btn" onclick="analyze()">🔬 Analyze Field</button>
+  </div>
+
+  <!-- ════ OUTPUT PANEL ════ -->
+  <div class="output-panel" id="output">
+    <div class="welcome-state">
+      <div class="welcome-icon">🌾</div>
+      <div class="welcome-title">CropSense AI Ready</div>
+      <div class="welcome-sub">Enter your field parameters on the left<br/>and click <strong>Analyze Field</strong> to get<br/>AI-powered predictions with rich visualizations.</div>
+    </div>
+  </div>
+</main>
+
+<script>
+Chart.defaults.font.family = 'DM Sans';
+Chart.defaults.color = '#6b7f6b';
+const charts = {};
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+async function analyze() {
+  const btn = document.querySelector('.analyze-btn');
+  btn.disabled = true; btn.textContent = '⏳ Analyzing...';
+  const inp = {
+    N: +document.getElementById('N').value,
+    P: +document.getElementById('P').value,
+    K: +document.getElementById('K').value,
+    temperature: +document.getElementById('temperature').value,
+    humidity: +document.getElementById('humidity').value,
+    rainfall: +document.getElementById('rainfall').value,
+    ph: +document.getElementById('ph').value,
+    moisture: +document.getElementById('moisture').value,
+    sunlight_hours: +document.getElementById('sunlight_hours').value,
+    soil_type: document.getElementById('soil_type').value,
+    crop_type: document.getElementById('crop_type').value,
+    water_frequency: document.getElementById('water_frequency').value,
+    fertilizer_type: document.getElementById('fertilizer_type').value,
+  };
+  document.getElementById('output').innerHTML = `<div class="loading"><div class="spinner"></div>Running AI models &amp; building charts...</div>`;
+  try {
+    const res = await fetch('/predict', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(inp) });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    renderResults(data.results, inp);
+  } catch(e) {
+    document.getElementById('output').innerHTML = `<div class="error-box">⚠️ ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '🔬 Analyze Field';
+  }
+}
+
+function renderResults(r, inp) {
+  const { crop, fertilizer: fert, growth: grow, health: hlth } = r;
+  const hc = hlth.score>=80?'#4ade80':hlth.score>=60?'#fbbf24':hlth.score>=40?'#fb923c':'#f87171';
+
+  const top3html = crop.top3.map((c,i)=>`
+    <div class="t3i">
+      <div class="t3rank ${i===0?'g':''}">${i+1}</div>
+      <span class="t3name">${c.name}</span>
+      <div class="t3bw"><div class="t3b" id="tb${i}" style="width:0"></div></div>
+      <span class="t3pct">${c.confidence}%</span>
+    </div>`).join('');
+
+  document.getElementById('output').innerHTML = `
+
+    <!-- ROW 1: Crop Card + NPK Radar -->
+    <div class="two-col">
+      <div class="result-card">
+        <div class="card-label">🌾 Best Crop to Grow</div>
+        <div class="card-main">${crop.name}</div>
+        <div class="card-sub">Top recommendation based on soil nutrients, climate &amp; rainfall.</div>
+        <div class="tip-box">${crop.tip}</div>
+        <div class="cbar-wrap">
+          <div class="cbar-label"><span>Model Confidence</span><span>${crop.confidence}%</span></div>
+          <div class="cbar"><div class="cbar-fill" id="cb1" style="width:0"></div></div>
+        </div>
+        <div class="top3">${top3html}</div>
+      </div>
+
+      <div class="result-card blue">
+        <div class="card-label">⚗️ NPK Soil Nutrient Radar</div>
+        <div class="card-sub" style="margin-bottom:12px">Your soil nutrients vs ideal growing range</div>
+        <div class="chart-wrap" style="height:210px"><canvas id="cNPK"></canvas></div>
+        <div class="stat-row">
+          <div class="stat-chip"><div class="stat-chip-val" style="color:#60a5fa">${inp.N}</div><div class="stat-chip-lbl">Nitrogen</div></div>
+          <div class="stat-chip"><div class="stat-chip-val" style="color:#a78bfa">${inp.P}</div><div class="stat-chip-lbl">Phosphorus</div></div>
+          <div class="stat-chip"><div class="stat-chip-val" style="color:#fb923c">${inp.K}</div><div class="stat-chip-lbl">Potassium</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Crop Probability Bar + Climate Radar -->
+    <div class="two-col">
+      <div class="result-card purple">
+        <div class="card-label">📊 Crop Probability Chart</div>
+        <div class="card-sub" style="margin-bottom:12px">Confidence breakdown of top crop candidates</div>
+        <div class="chart-wrap" style="height:210px"><canvas id="cCropBar"></canvas></div>
+      </div>
+
+      <div class="result-card orange">
+        <div class="card-label">🌡️ Climate Conditions Radar</div>
+        <div class="card-sub" style="margin-bottom:12px">Your environment vs optimal ranges (normalized)</div>
+        <div class="chart-wrap" style="height:210px"><canvas id="cClimate"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ROW 3: Health Gauge + Fertilizer + Growth -->
+    <div class="three-col">
+
+      <div class="result-card gold">
+        <div class="card-label">❤️ Farm Health Score</div>
+        <div class="chart-wrap" style="height:170px; position:relative;">
+          <canvas id="cHealth"></canvas>
+          <div class="gauge-center">
+            <div class="gauge-num" style="color:${hc}">${hlth.score}</div>
+            <div class="gauge-lbl">${hlth.status}</div>
+          </div>
+        </div>
+        <div class="health-grid">
+          <div class="hm"><div class="hm-lbl">pH</div><div class="hm-val" style="color:#4ade80">${hlth.ph_score}</div></div>
+          <div class="hm"><div class="hm-lbl">Moisture</div><div class="hm-val" style="color:#60a5fa">${hlth.moisture_score}</div></div>
+          <div class="hm"><div class="hm-lbl">Humidity</div><div class="hm-val" style="color:#a78bfa">${hlth.humidity_score}</div></div>
+          <div class="hm"><div class="hm-lbl">Temp</div><div class="hm-val" style="color:#fb923c">${hlth.temp_score}</div></div>
+        </div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-label">💊 Fertilizer Recommendation</div>
+        <div class="card-main" style="font-size:20px">${fert.name}</div>
+        <div class="card-sub">Optimal formula for your soil &amp; crop type.</div>
+        <div class="tip-box">${fert.tip}</div>
+        <div class="cbar-wrap" style="margin-bottom:14px">
+          <div class="cbar-label"><span>Confidence</span><span>${fert.confidence}%</span></div>
+          <div class="cbar"><div class="cbar-fill" id="cb2" style="width:0"></div></div>
+        </div>
+        <div class="card-label">📈 Health Sub-Scores</div>
+        <div class="chart-wrap" style="height:130px"><canvas id="cHealthBar"></canvas></div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-label">🌱 Growth Milestone Prediction</div>
+        <div class="card-main" style="font-size:20px">${grow.icon} ${grow.label}</div>
+        <div class="card-sub">${grow.desc}</div>
+        <div class="cbar-wrap" style="margin-bottom:14px">
+          <div class="cbar-label"><span>Confidence</span><span>${grow.confidence}%</span></div>
+          <div class="cbar"><div class="cbar-fill" id="cb3" style="width:0"></div></div>
+        </div>
+        <div class="card-label">☀️ Growth Conditions Radar</div>
+        <div class="chart-wrap" style="height:150px"><canvas id="cGrowth"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ROW 4: Full-width Soil Overview -->
+    <div class="result-card">
+      <div class="card-label">🧪 Soil &amp; Environment Overview — All Parameters vs Target</div>
+      <div class="card-sub" style="margin-bottom:12px">Bar chart of all input values (normalized 0–100) with target reference line</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="cSoil"></canvas></div>
+    </div>
+  `;
+
+  setTimeout(() => {
+    // bars
+    document.getElementById('cb1').style.width = crop.confidence+'%';
+    document.getElementById('cb2').style.width = fert.confidence+'%';
+    document.getElementById('cb3').style.width = grow.confidence+'%';
+    crop.top3.forEach((_,i) => { const el=document.getElementById('tb'+i); if(el) el.style.width=crop.top3[i].confidence+'%'; });
+    // charts
+    drawNPK(inp);
+    drawCropBar(crop.top3);
+    drawClimate(inp);
+    drawHealthDoughnut(hlth, hc);
+    drawHealthBar(hlth);
+    drawGrowth(inp);
+    drawSoil(inp);
+  }, 130);
+}
+
+// ── 1. NPK Radar ──────────────────────────────────
+function drawNPK(inp) {
+  destroyChart('cNPK');
+  const ctx = document.getElementById('cNPK'); if(!ctx) return;
+  charts['cNPK'] = new Chart(ctx, {
+    type:'radar',
+    data:{
+      labels:['Nitrogen','Phosphorus','Potassium','pH (×10)','Moisture','Organic'],
+      datasets:[
+        { label:'Your Field', data:[inp.N, inp.P, inp.K, inp.ph*10, inp.moisture, 55],
+          backgroundColor:'rgba(96,165,250,0.14)', borderColor:'#60a5fa',
+          pointBackgroundColor:'#60a5fa', pointRadius:4, borderWidth:2 },
+        { label:'Ideal Range', data:[80,50,50,65,45,60],
+          backgroundColor:'rgba(74,222,128,0.07)', borderColor:'rgba(74,222,128,0.45)',
+          pointBackgroundColor:'rgba(74,222,128,0.45)', pointRadius:3,
+          borderWidth:1.5, borderDash:[4,4] }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{ r:{ grid:{color:'#1f2d1f'}, angleLines:{color:'#1f2d1f'},
+        ticks:{display:false}, pointLabels:{font:{size:10},color:'#6b7f6b'},
+        suggestedMin:0, suggestedMax:120 }},
+      plugins:{ legend:{ labels:{ font:{size:11}, boxWidth:10 }}}
+    }
+  });
+}
+
+// ── 2. Crop Probability Bar ───────────────────────
+function drawCropBar(top3) {
+  destroyChart('cCropBar');
+  const ctx = document.getElementById('cCropBar'); if(!ctx) return;
+  charts['cCropBar'] = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: top3.map(c=>c.name),
+      datasets:[{ label:'Confidence (%)', data:top3.map(c=>c.confidence),
+        backgroundColor:['#4ade80','#86efac','#bbf7d0'],
+        borderRadius:8, borderSkipped:false }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      plugins:{ legend:{display:false},
+        tooltip:{ callbacks:{ label: c=>` ${c.raw}% confidence` }}},
+      scales:{
+        x:{ grid:{color:'#1f2d1f'}, ticks:{color:'#6b7f6b',font:{size:11}}, max:100 },
+        y:{ grid:{display:false}, ticks:{color:'#e8f5e8',font:{size:13,weight:'600'}} }
+      }
+    }
+  });
+}
+
+// ── 3. Climate Radar ─────────────────────────────
+function drawClimate(inp) {
+  destroyChart('cClimate');
+  const ctx = document.getElementById('cClimate'); if(!ctx) return;
+  charts['cClimate'] = new Chart(ctx, {
+    type:'radar',
+    data:{
+      labels:['Temperature','Humidity','Rainfall','Sunlight','Soil pH','Moisture'],
+      datasets:[
+        { label:'Current', data:[
+            Math.min(100,(inp.temperature/45)*100), inp.humidity,
+            Math.min(100,(inp.rainfall/300)*100),
+            Math.min(100,(inp.sunlight_hours/12)*100),
+            (inp.ph/14)*100, inp.moisture ],
+          backgroundColor:'rgba(167,139,250,0.14)', borderColor:'#a78bfa',
+          pointBackgroundColor:'#a78bfa', pointRadius:4, borderWidth:2 },
+        { label:'Optimal', data:[55,65,67,58,46,45],
+          backgroundColor:'rgba(251,191,36,0.07)', borderColor:'rgba(251,191,36,0.45)',
+          pointBackgroundColor:'rgba(251,191,36,0.45)', pointRadius:3,
+          borderWidth:1.5, borderDash:[4,4] }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{ r:{ grid:{color:'#1f2d1f'}, angleLines:{color:'#1f2d1f'},
+        ticks:{display:false}, pointLabels:{font:{size:10},color:'#6b7f6b'},
+        suggestedMin:0, suggestedMax:100 }},
+      plugins:{ legend:{ labels:{ font:{size:11}, boxWidth:10 }}}
+    }
+  });
+}
+
+// ── 4. Health Doughnut ────────────────────────────
+function drawHealthDoughnut(hlth, hc) {
+  destroyChart('cHealth');
+  const ctx = document.getElementById('cHealth'); if(!ctx) return;
+  const remaining = Math.max(0, 400 - hlth.ph_score - hlth.moisture_score - hlth.humidity_score - hlth.temp_score);
+  charts['cHealth'] = new Chart(ctx, {
+    type:'doughnut',
+    data:{
+      labels:['pH','Moisture','Humidity','Temp','Remaining'],
+      datasets:[{ data:[hlth.ph_score, hlth.moisture_score, hlth.humidity_score, hlth.temp_score, remaining],
+        backgroundColor:['#4ade80','#60a5fa','#a78bfa','#fb923c','#1f2d1f'],
+        borderColor:'#161d16', borderWidth:3, hoverOffset:6 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'68%',
+      plugins:{ legend:{display:false},
+        tooltip:{ callbacks:{ label: c=>` ${c.label}: ${c.raw}` }}}
+    }
+  });
+}
+
+// ── 5. Health Sub-score Bar ───────────────────────
+function drawHealthBar(hlth) {
+  destroyChart('cHealthBar');
+  const ctx = document.getElementById('cHealthBar'); if(!ctx) return;
+  charts['cHealthBar'] = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels:['pH','Moisture','Humidity','Temp'],
+      datasets:[{ data:[hlth.ph_score, hlth.moisture_score, hlth.humidity_score, hlth.temp_score],
+        backgroundColor:['#4ade80','#60a5fa','#a78bfa','#fb923c'],
+        borderRadius:6, borderSkipped:false }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ grid:{display:false}, ticks:{color:'#6b7f6b',font:{size:10}} },
+        y:{ grid:{color:'#1f2d1f'}, ticks:{color:'#6b7f6b',font:{size:10}}, max:100 }
+      }
+    }
+  });
+}
+
+// ── 6. Growth Radar ───────────────────────────────
+function drawGrowth(inp) {
+  destroyChart('cGrowth');
+  const ctx = document.getElementById('cGrowth'); if(!ctx) return;
+  charts['cGrowth'] = new Chart(ctx, {
+    type:'radar',
+    data:{
+      labels:['Sunlight','Temp','Humidity','Moisture','Rainfall'],
+      datasets:[{ label:'Conditions', data:[
+          Math.min(100,(inp.sunlight_hours/12)*100),
+          Math.min(100,(inp.temperature/40)*100),
+          inp.humidity, inp.moisture,
+          Math.min(100,(inp.rainfall/250)*100)],
+        backgroundColor:'rgba(74,222,128,0.12)', borderColor:'#4ade80',
+        pointBackgroundColor:'#4ade80', pointRadius:3, borderWidth:2 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{ r:{ grid:{color:'#1f2d1f'}, angleLines:{color:'#1f2d1f'},
+        ticks:{display:false}, pointLabels:{font:{size:9},color:'#6b7f6b'},
+        suggestedMin:0, suggestedMax:100 }},
+      plugins:{ legend:{display:false} }
+    }
+  });
+}
+
+// ── 7. Soil & Environment Overview ───────────────
+function drawSoil(inp) {
+  destroyChart('cSoil');
+  const ctx = document.getElementById('cSoil'); if(!ctx) return;
+  const labels = ['Nitrogen','Phosphorus','Potassium','Temperature','Humidity','Rainfall','Soil pH','Moisture','Sunlight'];
+  const vals   = [
+    Math.min(100, inp.N * 0.7),
+    Math.min(100, inp.P),
+    Math.min(100, inp.K),
+    Math.min(100,(inp.temperature/45)*100),
+    inp.humidity,
+    Math.min(100,(inp.rainfall/300)*100),
+    (inp.ph/14)*100,
+    inp.moisture,
+    Math.min(100,(inp.sunlight_hours/12)*100),
+  ];
+  const colors = ['#4ade80','#86efac','#22c55e','#fb923c','#60a5fa','#38bdf8','#a78bfa','#34d399','#fbbf24'];
+  const target = [70,50,50,55,65,67,46,45,58];
+  charts['cSoil'] = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        { label:'Your Field (normalized)', data:vals,
+          backgroundColor:colors, borderRadius:6, borderSkipped:false, order:2 },
+        { label:'Target Range', data:target, type:'line',
+          backgroundColor:'transparent', borderColor:'rgba(255,255,255,0.18)',
+          borderWidth:2, pointRadius:5, pointBackgroundColor:'rgba(255,255,255,0.35)',
+          tension:0.35, order:1 }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ font:{size:11}, boxWidth:10 }}},
+      scales:{
+        x:{ grid:{display:false}, ticks:{color:'#6b7f6b',font:{size:11}} },
+        y:{ grid:{color:'#1f2d1f'}, ticks:{color:'#6b7f6b',font:{size:11}}, max:115 }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
